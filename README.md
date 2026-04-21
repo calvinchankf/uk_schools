@@ -2,12 +2,14 @@
 
 A web application to search for nearby UK primary schools ranked by Key Stage 2 performance. Features an interactive map interface with OpenStreetMap and performance-based school rankings.
 
+![demo](demo/screenshot.png)
+
 ## Features
 
 - **Interactive Map**: Click anywhere on the map to search for nearby schools
 - **Postcode Search**: Enter a UK postcode to find schools in that area
 - **Performance Rankings**: Schools ranked by composite KS2 performance scores
-- **Adjustable Radius**: Search radius from 1-20 km
+- **Adjustable Radius**: Search radius from 1-10 km
 - **Color-Coded Markers**: Visual performance indicators on the map
   - Green (75+): Excellent
   - Light Green (60-74): Good
