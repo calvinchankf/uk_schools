@@ -1,0 +1,34 @@
+Column,Metafile heading,Metafile description,2019 field name
+1,TIME_PERIOD,Academic Year,
+2,TIME_IDENTIFIER,Time identifier,
+3,TRUST_GROUP_TYPE,Trust type,
+4,TRUST_NAME,Trust's name,CHAINNAME
+5,TRUST_UID,Trust's unique identification (UID),UID
+6,TRUST_ID,Trust's identification (ID),CHAINID
+7,TRUST_COMPANIES_HOUSE_NUMBER,Trust's companies house number,
+8,TRUST_UKPRN,Trust's UK provider reference number (UKPRN),
+9,TRUST_LEADREGION,Trust's Lead region,
+10,INSTITUTIONS_MATPTINC,URNs of the schools included in the MAT measures,SCHOOL-URNS
+11,NUMINST_MATPTINC,Number of academies in the MAT - eligible for MAT measures,SCHOOLS
+12,NUMINST_FSM6CLA1A_MATPTINC,Number of academies in the MAT that have disadvantaged pupils - eligible for MAT measures,SCHOOLSDIS
+13,NUMINST_CONVERTER_MATPTINC,Number of converter academies in the MAT - eligible for MAT measures,SCHOOLS_CONVERTER
+14,NUMINST_SPONSOR_MATPTINC,Number of sponsor-led academies in the MAT - eligible for MAT measures,SCHOOLS_SPONSORLED
+15,NUMINST_FREE_MATPTINC,Number of free schools in the MAT - eligible for MAT measures,SCHOOLS_FREE
+16,NUMINST_3_MATPTINC,Number of academies in the MAT that have been with the MAT for 3 full academic years - eligible for MAT measures,SCHOOLS3
+17,NUMINST_4PLUS_MATPTINC,Number of academies in the MAT that have been with the MAT for 4 or more full academic years - eligible for MAT measures,SCHOOLS4P
+18,TELIG_MATPTINC,Number of pupils at the end of KS2 in the MAT - eligible for MAT measures,TELIG
+19,PFSM6CLA1A_MATPTINC,Percentage disadvantaged pupils in the MAT - eligible for MAT measures,PFSM6CLA1A
+20,PNOTFSM6CLA1A_MATPTINC,Percentage non-disadvantaged pupils in the MAT - eligible for MAT measures,PNOTFSM6CLA1A
+21,PEALGRP2_MATPTINC,Percentage of pupils with English as an additional language in the MAT - eligible for MAT measures,PEALGRP2
+22,PSEN_MATPTINC,Percentage of SEN pupils in the MAT - eligible for MAT measures,PSEN
+23,PRWM_EXP_WGTAVG,"Weighted percentage of pupils reaching the expected standard in Reading, Writing, and Maths (combined)",RWMEXP_WGTAVG
+24,PRWM_EXP_WGTAVG_FSM6CLA1A,"Weighted percentage of disadvantaged pupils reaching the expected standard in Reading, Writing, and Maths (combined)",RWMEXP_DIS_WGTAVG
+25,PRWM_EXP_WGTAVG_NOTFSM6CLA1A,"Weighted percentage of non-disadvantaged pupils reaching the expected standard in Reading, Writing, and Maths (combined)",RWMEXP_NONDIS_WGTAVG
+26,INSTITUTIONS_INMAT,URNs of all mainstream schools in the MAT,
+27,NUMINST_INMAT,Overall number of academies in the MAT,
+28,NUMINST_CONVERTER_INMAT,Overall number of converter academies in the MAT,
+29,NUMINST_SPONSOR_INMAT,Overall number of sponsor-led academies in the MAT,
+30,NUMINST_FREE_INMAT,Overall number of free/studio/UTC academies in the MAT,
+31,TELIG_INMAT,Overall number of pupils at the end of KS2 in the MAT,
+32,PFSM6CLA1A_INMAT,Percentage disadvantaged pupils in the MAT,
+33,PNOTFSM6CLA1A_INMAT,Percentage non-disadvantaged pupils in the MAT,
