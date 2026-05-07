@@ -40,9 +40,10 @@ function App() {
     };
   }, []);
 
-  /**
-   * Handle map click to search nearby schools
-   */
+  const track = (eventName, params = {}) => {
+    if (typeof gtag === 'function') gtag('event', eventName, params);
+  };
+
   const handleMapClick = useCallback(async (latitude, longitude) => {
     setIsLoading(true);
     setError(null);
@@ -52,17 +53,18 @@ function App() {
       setSchools(response.schools);
       setSearchLocation(response.search_location);
       setSelectedSchool(null);
+      const count = response.schools.length;
+      track('map_click_search', { success: true, result_count: count, radius_km: radiusKm });
+      if (count === 0) track('zero_results', { search_type: 'map_click', radius_km: radiusKm });
     } catch (err) {
       setError('Failed to search schools. Please try again.');
+      track('map_click_search', { success: false, radius_km: radiusKm });
       console.error('Search error:', err);
     } finally {
       setIsLoading(false);
     }
   }, [radiusKm]);
 
-  /**
-   * Handle postcode search
-   */
   const handlePostcodeSearch = useCallback(async (postcode) => {
     setIsLoading(true);
     setError(null);
@@ -72,23 +74,26 @@ function App() {
       setSchools(response.schools);
       setSearchLocation(response.search_location);
       setSelectedSchool(null);
+      const count = response.schools.length;
+      track('postcode_search', { success: true, result_count: count, radius_km: radiusKm });
+      if (count === 0) track('zero_results', { search_type: 'postcode', radius_km: radiusKm });
     } catch (err) {
-      if (err.response && err.response.status === 404) {
+      const notFound = err.response && err.response.status === 404;
+      if (notFound) {
         setError('Postcode not found. Please check and try again.');
       } else {
         setError('Failed to search schools. Please try again.');
       }
+      track('postcode_search', { success: false, not_found: notFound, radius_km: radiusKm });
       console.error('Search error:', err);
     } finally {
       setIsLoading(false);
     }
   }, [radiusKm]);
 
-  /**
-   * Handle radius change - re-search if location exists
-   */
   const handleRadiusChange = useCallback(async (newRadius) => {
     setRadiusKm(newRadius);
+    track('radius_changed', { radius_km: newRadius });
 
     if (searchLocation) {
       setIsLoading(true);
@@ -118,11 +123,9 @@ function App() {
     }
   }, [searchLocation]);
 
-  /**
-   * Handle school selection
-   */
   const handleSchoolClick = useCallback((school) => {
     setSelectedSchool(school);
+    track('school_card_clicked', { school_name: school.name, urn: school.urn });
   }, []);
 
   return (
