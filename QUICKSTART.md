@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get the UK Schools Search app running in 3 steps.
+Get the UK Schools Search app running in 3 steps. The app covers both primary schools (KS2) and secondary schools (KS4).
 
 ## Prerequisites
 
@@ -8,21 +8,34 @@ Get the UK Schools Search app running in 3 steps.
 - Node.js 18+ installed
 - Internet connection (for geocoding API)
 
-## Step 1: Process the Data (~4 minutes)
+## Step 1: Process the Data (~5 minutes)
 
 ```bash
 cd scripts
-chmod +x run_all.sh
-./run_all.sh
+pip install -r requirements.txt
+
+# Primary schools (KS2)
+python3 geocode_schools.py          # ~4 min
+python3 prepare_school_data.py
+
+# Secondary schools (KS4)
+python3 geocode_secondary.py        # ~30 sec
+python3 prepare_secondary_data.py
+
+# Copy into frontend
+cp ../data_processed/schools_with_performance.json ../frontend/public/data/schools.json
+cp ../data_processed/secondary_schools.json ../frontend/public/data/secondary.json
 ```
 
 This will:
-- Geocode all school postcodes
-- Merge school info with performance data
-- Calculate composite scores
-- Validate data quality
+- Geocode all school postcodes (primary + secondary)
+- Merge school info with KS2 / KS4 performance data
+- Calculate composite scores for each phase
+- Copy the processed data where the frontend can serve it
 
-**Output**: `data_processed/schools_with_performance.json` (16,403 schools)
+**Output**:
+- `data_processed/schools_with_performance.json` (16,403 primary schools)
+- `data_processed/secondary_schools.json` (4,055 secondary schools)
 
 ## Step 2: Start the Backend
 
@@ -52,10 +65,11 @@ npm run dev
 
 ## Try It Out
 
-1. **Map Click**: Click anywhere on the map to search nearby schools
-2. **Postcode Search**: Enter "EC1N 2NX" and click Search
-3. **Adjust Radius**: Move the radius slider (1-20 km)
-4. **View Details**: Click school markers or list items
+1. **Switch Phase**: Use the "Primary (KS2)" / "Secondary (KS4)" toggle in the header
+2. **Map Click**: Click anywhere on the map to search nearby schools
+3. **Postcode Search**: Enter "EC1N 2NX" and click Search
+4. **Adjust Radius**: Use the radius dropdown
+5. **View Details**: Click school markers or list items
 
 ## Expected Results
 
@@ -87,14 +101,16 @@ lsof -i :3000  # Frontend
 
 **"Schools data not found"**
 ```bash
-# Re-run data processing
-cd scripts && ./run_all.sh
+# Re-run data processing for the relevant phase
+cd scripts
+python3 prepare_school_data.py      # primary
+python3 prepare_secondary_data.py   # secondary
 ```
 
 **"No schools appearing"**
-- Ensure backend is running (check http://localhost:8000/health)
 - Check browser console for errors
-- Verify CORS is enabled in backend
+- For primary: verify `frontend/public/data/schools.json` exists
+- For secondary: verify `frontend/public/data/secondary.json` exists
 
 ## Next Steps
 

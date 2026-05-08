@@ -23,20 +23,34 @@ First, process the raw school data and geocode postcodes:
 cd scripts
 pip install -r requirements.txt
 
-# Step 1: Geocode postcodes (~4 minutes)
+# Step 1: Geocode primary school postcodes (~4 minutes)
 python3 geocode_schools.py
 
-# Step 2: Merge data and calculate performance scores
+# Step 2: Geocode secondary school postcodes (~30 seconds)
+python3 geocode_secondary.py
+
+# Step 3: Merge primary data and calculate KS2 performance scores
 python3 prepare_school_data.py
 
-# Step 3: Validate data quality
+# Step 4: Merge secondary data and calculate KS4 performance scores
+python3 prepare_secondary_data.py
+
+# Step 5: Validate data quality
 python3 validate_data.py
 ```
 
 **Expected output:**
-- `data_processed/postcode_coordinates.json` - Geocoded postcode coordinates
-- `data_processed/schools_with_performance.json` - Final school dataset
+- `data_processed/postcode_coordinates.json` - Geocoded postcode coordinates (primary + secondary)
+- `data_processed/schools_with_performance.json` - Primary school dataset (16,403 schools)
+- `data_processed/secondary_schools.json` - Secondary school dataset (4,055 schools)
 - `data_processed/validation_report.txt` - Data quality report
+
+After processing, copy the generated JSON files into the frontend:
+
+```bash
+cp data_processed/schools_with_performance.json frontend/public/data/schools.json
+cp data_processed/secondary_schools.json frontend/public/data/secondary.json
+```
 
 ### 2. Backend Setup (local dev only)
 
@@ -126,15 +140,25 @@ Get dataset statistics
 
 ## Performance Score Calculation
 
-Schools are ranked using a composite performance score (0-100) weighted as follows:
+All schools are ranked on a composite 0–100 score. The metrics and weights differ by phase.
+
+### Primary schools (KS2)
 
 - **PTRWM_EXP** (40%): % of pupils at expected standard in reading/writing/maths
 - **PTRWM_HIGH** (20%): % of pupils at high standard
-- **READ_AVERAGE** (15%): Average reading scaled score (normalized)
-- **MAT_AVERAGE** (15%): Average maths scaled score (normalized)
-- **GPS_AVERAGE** (10%): Average GPS scaled score (normalized)
+- **READ_AVERAGE** (15%): Average reading scaled score (normalized from 80–120)
+- **MAT_AVERAGE** (15%): Average maths scaled score (normalized from 80–120)
+- **GPS_AVERAGE** (10%): Average GPS scaled score (normalized from 80–120)
 
-Schools need at least 3 valid metrics to receive a performance score.
+At least 3 valid metrics required.
+
+### Secondary schools (KS4)
+
+- **PTL2BASICS_94** (50%): % of pupils achieving grade 5+ in English and Maths GCSEs (the DfE "strong pass" headline measure)
+- **ATT8SCR** (35%): Attainment 8 score, normalized from the observed range of 0–87.2
+- **PTEBACC_94** (15%): % of pupils achieving grade 4+ across all EBacc subject areas
+
+At least 2 valid metrics required.
 
 ## Technology Stack
 
@@ -174,7 +198,8 @@ Schools need at least 3 valid metrics to receive a performance score.
 
 ### No schools appearing
 - Check browser console for errors
-- Verify `frontend/public/data/schools.json` exists (run data processing first)
+- Verify `frontend/public/data/schools.json` exists (run primary data processing first)
+- For secondary schools, verify `frontend/public/data/secondary.json` exists (run `prepare_secondary_data.py`)
 
 ### Geocoding fails
 - Check internet connection

@@ -13,6 +13,17 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.app-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.app-header-text {
+  min-width: 0;
+}
+
 .app-header h1 {
   margin: 0;
   font-size: 1.25rem;
@@ -23,6 +34,43 @@
   margin: 0.25rem 0 0 0;
   font-size: 0.75rem;
   opacity: 0.9;
+}
+
+.phase-toggle {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.phase-btn {
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.phase-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: white;
+  color: white;
+}
+
+.phase-btn--active {
+  background: white;
+  border-color: white;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.phase-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .app-content {

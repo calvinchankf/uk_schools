@@ -18,6 +18,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [sidebarWidth, setSidebarWidth] = useState(400);
+  const [phase, setPhase] = useState('primary');
   const isDragging = useRef(false);
 
   const handleResizeStart = useCallback((e) => {
@@ -49,34 +50,34 @@ function App() {
     setError(null);
 
     try {
-      const response = await searchNearbySchools(latitude, longitude, radiusKm, 50);
+      const response = await searchNearbySchools(latitude, longitude, radiusKm, 50, phase);
       setSchools(response.schools);
       setSearchLocation(response.search_location);
       setSelectedSchool(null);
       const count = response.schools.length;
-      track('map_click_search', { success: true, result_count: count, radius_km: radiusKm });
-      if (count === 0) track('zero_results', { search_type: 'map_click', radius_km: radiusKm });
+      track('map_click_search', { success: true, result_count: count, radius_km: radiusKm, phase });
+      if (count === 0) track('zero_results', { search_type: 'map_click', radius_km: radiusKm, phase });
     } catch (err) {
       setError('Failed to search schools. Please try again.');
-      track('map_click_search', { success: false, radius_km: radiusKm });
+      track('map_click_search', { success: false, radius_km: radiusKm, phase });
       console.error('Search error:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [radiusKm]);
+  }, [radiusKm, phase]);
 
   const handlePostcodeSearch = useCallback(async (postcode) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await searchByPostcode(postcode, radiusKm, 50);
+      const response = await searchByPostcode(postcode, radiusKm, 50, phase);
       setSchools(response.schools);
       setSearchLocation(response.search_location);
       setSelectedSchool(null);
       const count = response.schools.length;
-      track('postcode_search', { success: true, result_count: count, radius_km: radiusKm });
-      if (count === 0) track('zero_results', { search_type: 'postcode', radius_km: radiusKm });
+      track('postcode_search', { success: true, result_count: count, radius_km: radiusKm, phase });
+      if (count === 0) track('zero_results', { search_type: 'postcode', radius_km: radiusKm, phase });
     } catch (err) {
       const notFound = err.response && err.response.status === 404;
       if (notFound) {
@@ -84,12 +85,12 @@ function App() {
       } else {
         setError('Failed to search schools. Please try again.');
       }
-      track('postcode_search', { success: false, not_found: notFound, radius_km: radiusKm });
+      track('postcode_search', { success: false, not_found: notFound, radius_km: radiusKm, phase });
       console.error('Search error:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [radiusKm]);
+  }, [radiusKm, phase]);
 
   const handleRadiusChange = useCallback(async (newRadius) => {
     setRadiusKm(newRadius);
@@ -102,13 +103,14 @@ function App() {
       try {
         let response;
         if (searchLocation.postcode) {
-          response = await searchByPostcode(searchLocation.postcode, newRadius, 50);
+          response = await searchByPostcode(searchLocation.postcode, newRadius, 50, phase);
         } else {
           response = await searchNearbySchools(
             searchLocation.latitude,
             searchLocation.longitude,
             newRadius,
-            50
+            50,
+            phase
           );
         }
         setSchools(response.schools);
@@ -121,18 +123,75 @@ function App() {
         setIsLoading(false);
       }
     }
-  }, [searchLocation]);
+  }, [searchLocation, phase]);
 
-  const handleSchoolClick = useCallback((school) => {
+  const handlePhaseChange = useCallback(async (newPhase) => {
+    setPhase(newPhase);
+    setSchools([]);
+    setSelectedSchool(null);
+    track('phase_changed', { phase: newPhase, from_phase: phase });
+
+    if (searchLocation) {
+      setIsLoading(true);
+      setError(null);
+      try {
+        let response;
+        if (searchLocation.postcode) {
+          response = await searchByPostcode(searchLocation.postcode, radiusKm, 50, newPhase);
+        } else {
+          response = await searchNearbySchools(
+            searchLocation.latitude,
+            searchLocation.longitude,
+            radiusKm,
+            50,
+            newPhase
+          );
+        }
+        setSchools(response.schools);
+        setSearchLocation(response.search_location);
+      } catch (err) {
+        setError('Failed to update search. Please try again.');
+        console.error('Phase switch error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  }, [searchLocation, radiusKm, phase]);
+
+  const handleSchoolClick = useCallback((school, rank) => {
     setSelectedSchool(school);
-    track('school_card_clicked', { school_name: school.name, urn: school.urn });
+    track('school_card_clicked', { school_name: school.name, urn: school.urn, rank });
   }, []);
 
   return (
     <div className="app">
       <header className="app-header">
-        <h1>UK Primary Schools Search</h1>
-        <p className="subtitle">Find and compare Key Stage 2 primary schools by performance</p>
+        <div className="app-header-top">
+          <div className="app-header-text">
+            <h1>UK Schools Search</h1>
+            <p className="subtitle">
+              {phase === 'primary'
+                ? 'Find and compare Key Stage 2 primary schools by performance'
+                : 'Find and compare Key Stage 4 secondary schools by performance'}
+            </p>
+          </div>
+          <div className="phase-toggle">
+            <button
+              className={`phase-btn${phase === 'primary' ? ' phase-btn--active' : ''}`}
+              onClick={() => handlePhaseChange('primary')}
+              disabled={isLoading}
+            >
+              Primary (KS2)
+            </button>
+            <button
+              className={`phase-btn${phase === 'secondary' ? ' phase-btn--active' : ''}`}
+              onClick={() => handlePhaseChange('secondary')}
+              disabled={isLoading}
+            >
+              Secondary (KS4)
+            </button>
+          </div>
+        </div>
       </header>
 
       <div className="app-content">
@@ -153,6 +212,7 @@ function App() {
             schools={schools}
             onSchoolClick={handleSchoolClick}
             selectedSchool={selectedSchool}
+            phase={phase}
           />
         </aside>
 

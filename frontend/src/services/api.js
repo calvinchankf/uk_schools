@@ -1,18 +1,22 @@
 /**
  * Client-side data service for UK Schools — no backend required.
- * Loads schools_with_performance.json once, caches it, and does all
- * spatial filtering in the browser.
+ * Loads primary or secondary schools JSON once per phase, caches it,
+ * and does all spatial filtering in the browser.
  */
 
 // ── Data cache ────────────────────────────────────────────────────────────────
-let schoolsCache = null;
+const schoolsCache = { primary: null, secondary: null };
 
-async function loadSchools() {
-  if (schoolsCache) return schoolsCache;
-  const response = await fetch(`${import.meta.env.BASE_URL}data/schools.json`);
-  if (!response.ok) throw new Error('Failed to load schools data');
-  schoolsCache = await response.json();
-  return schoolsCache;
+async function loadSchools(phase = 'primary') {
+  if (schoolsCache[phase]) return schoolsCache[phase];
+  const file = phase === 'secondary' ? 'secondary.json' : 'schools.json';
+  const t0 = performance.now();
+  const response = await fetch(`${import.meta.env.BASE_URL}data/${file}`);
+  if (!response.ok) throw new Error(`Failed to load ${phase} schools data`);
+  schoolsCache[phase] = await response.json();
+  const load_time_ms = Math.round(performance.now() - t0);
+  if (typeof gtag === 'function') gtag('event', 'data_loaded', { file, load_time_ms });
+  return schoolsCache[phase];
 }
 
 // ── Haversine distance (km) ───────────────────────────────────────────────────
@@ -43,13 +47,13 @@ function findNearby(schools, lat, lon, radiusKm, limit) {
   };
 }
 
-// ── Public API (same interface as before) ─────────────────────────────────────
+// ── Public API ────────────────────────────────────────────────────────────────
 
 /**
  * Search for schools near a geographic location
  */
-export const searchNearbySchools = async (latitude, longitude, radiusKm = 5, limit = 20) => {
-  const schools = await loadSchools();
+export const searchNearbySchools = async (latitude, longitude, radiusKm = 5, limit = 20, phase = 'primary') => {
+  const schools = await loadSchools(phase);
   return {
     ...findNearby(schools, latitude, longitude, radiusKm, limit),
     search_location: { latitude, longitude, radius_km: radiusKm },
@@ -60,8 +64,7 @@ export const searchNearbySchools = async (latitude, longitude, radiusKm = 5, lim
  * Search for schools near a UK postcode.
  * Geocodes via the free postcodes.io API, then filters locally.
  */
-export const searchByPostcode = async (postcode, radiusKm = 5, limit = 20) => {
-  // Geocode postcode using the free postcodes.io API
+export const searchByPostcode = async (postcode, radiusKm = 5, limit = 20, phase = 'primary') => {
   const geoRes = await fetch(
     `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode.trim())}`
   );
@@ -70,7 +73,7 @@ export const searchByPostcode = async (postcode, radiusKm = 5, limit = 20) => {
   if (!geoData.result) throw new Error('Postcode not found');
 
   const { latitude, longitude } = geoData.result;
-  const schools = await loadSchools();
+  const schools = await loadSchools(phase);
 
   return {
     ...findNearby(schools, latitude, longitude, radiusKm, limit),
@@ -81,8 +84,8 @@ export const searchByPostcode = async (postcode, radiusKm = 5, limit = 20) => {
 /**
  * Get details for a specific school by URN
  */
-export const getSchoolDetails = async (urn) => {
-  const schools = await loadSchools();
+export const getSchoolDetails = async (urn, phase = 'primary') => {
+  const schools = await loadSchools(phase);
   const school = schools.find((s) => s.urn === urn);
   if (!school) throw new Error(`School with URN ${urn} not found`);
   return school;
@@ -91,8 +94,8 @@ export const getSchoolDetails = async (urn) => {
 /**
  * Get dataset statistics
  */
-export const getStatistics = async () => {
-  const schools = await loadSchools();
+export const getStatistics = async (phase = 'primary') => {
+  const schools = await loadSchools(phase);
   const scores = schools.map((s) => s.performance_score);
   const sum = scores.reduce((a, b) => a + b, 0);
   return {
