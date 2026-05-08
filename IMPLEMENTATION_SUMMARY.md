@@ -2,26 +2,36 @@
 
 ## Overview
 
-Successfully implemented a full-stack web application for searching UK primary schools by location with KS2 performance rankings. The application features an interactive map interface and comprehensive school performance data.
+A static web application for searching UK primary and secondary schools by location with performance rankings. Primary schools are ranked by KS2 results; secondary schools by KS4 results. The application features an interactive map interface, a phase toggle, and comprehensive school performance data.
 
 ## What Was Built
 
 ### 1. Data Processing Scripts (`/scripts`)
 
 **geocode_schools.py**
-- Geocodes 16,403+ UK school postcodes to lat/lon coordinates
+- Geocodes primary school postcodes to lat/lon coordinates
 - Uses postcodes.io API (free, no API key required)
 - Batch processing with rate limiting (100 postcodes per request)
 - Nominatim fallback for failed postcodes
-- ~4 minutes processing time
-- 99%+ success rate expected
+- ~4 minutes processing time, 99%+ success rate
+
+**geocode_secondary.py**
+- Extends the postcode coordinates cache with secondary school postcodes
+- Identifies only the postcodes not already cached (incremental)
+- ~30 seconds for ~3,700 new postcodes, 99.4% success rate
+- Updates `data_processed/postcode_coordinates.json` in place
 
 **prepare_school_data.py**
 - Merges school information with KS2 performance data
-- Calculates composite performance scores (0-100 scale)
-- Adds geocoded coordinates to each school
-- Filters for primary schools with complete data
-- Produces clean JSON output for API consumption
+- Calculates composite KS2 score (0-100): PTRWM_EXP 40%, PTRWM_HIGH 20%, READ_AVERAGE 15%, MAT_AVERAGE 15%, GPS_AVERAGE 10%
+- Filters for primary schools with coordinates and at least 3 valid metrics
+- Outputs `data_processed/schools_with_performance.json` (16,403 schools)
+
+**prepare_secondary_data.py**
+- Merges school information with KS4 provisional data (RECTYPE=1 school-level rows only)
+- Calculates composite KS4 score (0-100): PTL2BASICS_94 50%, normalised ATT8SCR 35%, PTEBACC_94 15%
+- Filters for secondary schools with coordinates and at least 2 valid metrics
+- Outputs `data_processed/secondary_schools.json` (4,055 schools)
 
 **validate_data.py**
 - Validates geocoding success rate (target: >99%)
@@ -31,10 +41,8 @@ Successfully implemented a full-stack web application for searching UK primary s
 
 **run_all.sh**
 - Automated pipeline script
-- Sets up virtual environment
-- Installs dependencies
-- Runs all processing steps in sequence
-- Error handling and progress reporting
+- Sets up virtual environment, installs dependencies
+- Runs all processing steps in sequence with error handling
 
 ### 2. Backend API (`/backend`)
 
@@ -86,9 +94,9 @@ Successfully implemented a full-stack web application for searching UK primary s
 **SchoolList.jsx**
 - Ranked list display (#1, #2, #3...)
 - Performance score badges with color coding
-- Comprehensive school information cards
+- Phase-aware metrics: KS2 fields (RWM %, reading/maths scaled scores) for primary; KS4 fields (Grade 5+ Eng & Maths, Attainment 8, EBacc %) for secondary
+- Tooltip descriptions for every metric
 - Distance from search point
-- Key metrics display (RWM %, reading/maths scores)
 - Click to highlight on map
 - Performance legend
 - Responsive scrolling
@@ -113,8 +121,10 @@ Successfully implemented a full-stack web application for searching UK primary s
   - Selected school
   - Loading state
   - Error messages
+  - Active phase (`primary` | `secondary`)
+- Primary / Secondary toggle in header; switching phase re-runs any active search
 - Coordinated map/list interactions
-- Auto-refresh on radius change
+- Auto-refresh on radius or phase change
 
 **Styling**
 - Clean, modern CSS
@@ -150,9 +160,9 @@ Successfully implemented a full-stack web application for searching UK primary s
 - Trade-off justified for this dataset size
 
 **Composite Performance Score**
-- Single metric for easy ranking
-- Weighted combination of 5 KS2 metrics
-- PTRWM_EXP gets highest weight (40%) as primary metric
+- Single metric for easy ranking, same 0-100 scale for both phases
+- Primary: weighted combination of 5 KS2 metrics; PTRWM_EXP highest weight (40%)
+- Secondary: weighted combination of 3 KS4 metrics; PTL2BASICS_94 highest weight (50%)
 - Raw metrics still visible for transparency
 
 **Geocoding Strategy**
@@ -183,17 +193,15 @@ Successfully implemented a full-stack web application for searching UK primary s
 
 ## Data Quality
 
-**Final Dataset**
-- **16,403 primary schools** with complete data
-- **99.6% geocoding success** (expected)
-- **100% UK coordinate bounds** validation
-- **Performance scores**: Mean ~60, Range 0-100
+**Final Datasets**
+- **16,403 primary schools** — 99.6% geocoding success, mean KS2 score ~60
+- **4,055 secondary schools** — 99.4% geocoding success (incremental run), mean KS4 score ~50
 
-**Performance Distribution**
-- Excellent (75+): ~15%
-- Good (60-74): ~35%
-- Average (45-59): ~35%
-- Below average (<45): ~15%
+**Secondary Performance Distribution**
+- Excellent (75+): ~8%
+- Good (60-74): ~22%
+- Average (45-59): ~39%
+- Below average (<45): ~31%
 
 ## File Structure
 
@@ -208,6 +216,7 @@ uk_schools/
 │   ├── england_school_information.csv
 │   ├── england_census.csv
 │   ├── england_ks2revised.csv
+│   ├── england_ks4provisional.csv     # KS4 secondary performance
 │   └── [other datasets...]
 │
 ├── metadata_2024-2025/                # Data field definitions
@@ -216,18 +225,21 @@ uk_schools/
 │   └── [other metadata...]
 │
 ├── data_processed/                    # Generated by scripts
-│   ├── postcode_coordinates.json      # Geocoded postcodes
-│   ├── schools_with_performance.json  # Final dataset (16,403)
+│   ├── postcode_coordinates.json      # Geocoded postcodes (primary + secondary)
+│   ├── schools_with_performance.json  # Primary dataset (16,403)
+│   ├── secondary_schools.json         # Secondary dataset (4,055)
 │   └── validation_report.txt          # Quality report
 │
 ├── scripts/                           # Data processing
-│   ├── geocode_schools.py             # Step 1: Geocoding
-│   ├── prepare_school_data.py         # Step 2: Merge & score
+│   ├── geocode_schools.py             # Step 1a: Geocode primary postcodes
+│   ├── geocode_secondary.py           # Step 1b: Geocode secondary postcodes
+│   ├── prepare_school_data.py         # Step 2a: Primary merge & KS2 score
+│   ├── prepare_secondary_data.py      # Step 2b: Secondary merge & KS4 score
 │   ├── validate_data.py               # Step 3: Validation
 │   ├── run_all.sh                     # Automated pipeline
 │   └── requirements.txt               # Python deps
 │
-├── backend/                           # FastAPI backend
+├── backend/                           # FastAPI backend (local dev only)
 │   ├── app/
 │   │   ├── __init__.py
 │   │   ├── main.py                    # API endpoints
@@ -240,21 +252,24 @@ uk_schools/
     ├── index.html                     # HTML entry point
     ├── vite.config.js                 # Vite config
     ├── package.json                   # Node deps
+    ├── public/data/
+    │   ├── schools.json               # Primary schools (served statically)
+    │   └── secondary.json             # Secondary schools (served statically)
     ├── src/
     │   ├── main.jsx                   # React entry point
-    │   ├── App.jsx                    # Main component
-    │   ├── App.css                    # Main styles
+    │   ├── App.jsx                    # Main component + phase toggle
+    │   ├── App.css                    # Main styles (incl. phase toggle)
     │   ├── index.css                  # Global styles
     │   ├── components/
     │   │   ├── Map.jsx                # Leaflet map
-    │   │   ├── SchoolList.jsx         # School rankings
+    │   │   ├── SchoolList.jsx         # Phase-aware school rankings
     │   │   ├── SchoolList.css
     │   │   ├── SearchBar.jsx          # Postcode search
     │   │   ├── SearchBar.css
     │   │   ├── FilterPanel.jsx        # Radius slider
     │   │   └── FilterPanel.css
     │   └── services/
-    │       └── api.js                 # API client
+    │       └── api.js                 # Phase-aware data loading + search
 ```
 
 ## Running the Application
@@ -336,11 +351,11 @@ npm run dev
 - CI/CD pipeline
 
 ### Data
-- Include KS4 secondary schools
 - Add school catchment areas
 - Include latest Ofsted reports
 - Real-time data updates
 - School capacity and availability
+- KS5 post-16 / sixth form results
 
 ## Known Limitations
 
@@ -378,9 +393,10 @@ The UK Schools Search application successfully delivers on all core requirements
 
 1. ✓ Search by map location
 2. ✓ Search by postcode
-3. ✓ Rank schools by KS2 performance
-4. ✓ Interactive map with zoom/pan
-5. ✓ Focus on primary schools
-6. ✓ Free technology stack (no API costs)
+3. ✓ Rank primary schools by KS2 performance
+4. ✓ Rank secondary schools by KS4 performance
+5. ✓ Interactive map with zoom/pan
+6. ✓ Primary / Secondary phase toggle
+7. ✓ Free technology stack (no API costs)
 
 The implementation is production-ready for the current dataset size and can handle expected traffic loads. The modular architecture allows for future enhancements and the comprehensive documentation enables easy maintenance and extension.

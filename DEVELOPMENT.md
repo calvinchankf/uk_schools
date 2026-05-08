@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Full-stack web application for searching UK primary schools by location with KS2 performance rankings.
+Static web application for searching UK primary and secondary schools by location with performance rankings. Primary schools use KS2 metrics; secondary schools use KS4 metrics.
 
 ## Development Environment Setup
 
@@ -65,11 +65,13 @@ Options in `package.json`:
 ```
 uk_schools/
 ├── scripts/              # Data processing (run once)
-│   ├── geocode_schools.py
-│   ├── prepare_school_data.py
-│   └── validate_data.py
+│   ├── geocode_schools.py        # Geocode primary school postcodes
+│   ├── geocode_secondary.py      # Geocode secondary school postcodes
+│   ├── prepare_school_data.py    # Build primary schools JSON (KS2)
+│   ├── prepare_secondary_data.py # Build secondary schools JSON (KS4)
+│   └── validate_data.py          # Validate data quality
 │
-├── backend/              # FastAPI backend
+├── backend/              # FastAPI backend (local dev only)
 │   └── app/
 │       ├── main.py       # API endpoints
 │       ├── models.py     # Pydantic schemas
@@ -78,9 +80,9 @@ uk_schools/
 │
 └── frontend/             # React frontend
     └── src/
-        ├── App.jsx       # Main component
+        ├── App.jsx       # Main component (phase toggle lives here)
         ├── components/   # UI components
-        └── services/     # API client
+        └── services/     # Client-side data loading and search
 ```
 
 ## Code Conventions
@@ -225,7 +227,7 @@ For complex state, consider:
 
 ### Modifying Score Calculation
 
-Edit `scripts/prepare_school_data.py`:
+**Primary (KS2)** — edit `scripts/prepare_school_data.py`:
 
 ```python
 def calculate_composite_score(row):
@@ -237,37 +239,36 @@ def calculate_composite_score(row):
         'MAT_AVERAGE': 0.15,
         'GPS_AVERAGE': 0.10,
     }
-    # Implementation...
 ```
 
 Then re-run:
 ```bash
 cd scripts
 python3 prepare_school_data.py
+cp ../data_processed/schools_with_performance.json ../frontend/public/data/schools.json
+```
+
+**Secondary (KS4)** — edit `scripts/prepare_secondary_data.py`:
+
+```python
+def calculate_composite_score(row):
+    # Adjust weights here
+    # PTL2BASICS_94: 0.50
+    # ATT8SCR (normalised): 0.35
+    # PTEBACC_94: 0.15
+```
+
+Then re-run:
+```bash
+cd scripts
+python3 prepare_secondary_data.py
+cp ../data_processed/secondary_schools.json ../frontend/public/data/secondary.json
 ```
 
 ### Adding New Data Fields
 
-1. Modify `prepare_school_data.py` to include new fields:
-```python
-school = {
-    'urn': int(row['URN']),
-    'name': row['SCHNAME'],
-    'new_field': row['NEW_FIELD'],  # Add here
-    # ...
-}
-```
-
-2. Update Pydantic model in `backend/app/models.py`:
-```python
-class School(BaseModel):
-    urn: int
-    name: str
-    new_field: Optional[str]  # Add here
-    # ...
-```
-
-3. Update frontend components to display new field
+1. Modify the relevant processing script to include the new field in the output dict
+2. Update frontend components (`SchoolList.jsx`) to display the new field in the right phase branch
 
 ## Debugging
 
@@ -315,8 +316,13 @@ console.table(arrayData);  // Nice table view
 
 ```bash
 cd scripts
+# Primary
 python3 geocode_schools.py
 python3 prepare_school_data.py
+# Secondary
+python3 geocode_secondary.py
+python3 prepare_secondary_data.py
+# Validate
 python3 validate_data.py
 ```
 
@@ -360,6 +366,7 @@ Edit `frontend/src/components/Map.jsx`:
 
 **Frontend**:
 - [ ] Map loads and displays tiles
+- [ ] Primary / Secondary toggle visible in header
 - [ ] Click map triggers search
 - [ ] Postcode search works for valid postcodes
 - [ ] Invalid postcodes show error message
@@ -367,6 +374,9 @@ Edit `frontend/src/components/Map.jsx`:
 - [ ] Click marker shows popup
 - [ ] Click school in list highlights on map
 - [ ] Radius slider updates results
+- [ ] Switching phase re-runs any active search
+- [ ] Secondary cards show KS4 metrics (Attainment 8, 5+ Eng & Maths, EBacc)
+- [ ] Primary cards show KS2 metrics (RWM %, reading/maths scores)
 - [ ] Responsive on mobile (< 768px)
 
 ### Automated Testing (Future)

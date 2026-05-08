@@ -9,6 +9,7 @@ import './SchoolList.css';
 const TOOLTIPS = {
   distance:
     'Straight-line distance from your search point to the school, calculated from postcodes.',
+  // KS2 (primary)
   ptrwm_exp:
     'Reading, Writing & Maths — % of Year 6 pupils (age 11) who reached the expected standard in all three subjects at the end of Key Stage 2. National average is around 61%.',
   ptrwm_high:
@@ -21,9 +22,18 @@ const TOOLTIPS = {
     'Pupils eligible for Free School Meals at any point in the last 6 years. This is the DfE\'s standard measure of economic disadvantage. A higher % indicates more pupils from lower-income households.',
   feeder:
     'The nearest secondary school by straight-line distance. Most Year 6 pupils from this primary will likely apply to secondary schools nearby, though admissions criteria vary.',
+  // KS4 (secondary)
+  att8_score:
+    'Attainment 8 — average score across a pupil\'s best 8 GCSE subjects, including English and Maths. Scores typically range from 0–90; the national average is around 46. Higher is better.',
+  l2basics_94:
+    '% of pupils achieving grade 5 or above in both English and Maths GCSEs. This is the DfE\'s headline "strong pass" measure. The national average is around 45%.',
+  ebacc_94:
+    '% of pupils achieving grade 4+ (standard pass) across all five EBacc subject areas: English, Maths, Science, Humanities, and a Language. National average is around 24%.',
+  ebacc_entry:
+    '% of pupils entered for the full English Baccalaureate (EBacc) combination of subjects. The government\'s target is 90% entry by 2025.',
 };
 
-const SchoolList = ({ schools, onSchoolClick, selectedSchool }) => {
+const SchoolList = ({ schools, onSchoolClick, selectedSchool, phase = 'primary' }) => {
   const getScoreBadgeColor = (score) => {
     if (score >= 75) return '#22c55e';
     if (score >= 60) return '#84cc16';
@@ -84,7 +94,7 @@ const SchoolList = ({ schools, onSchoolClick, selectedSchool }) => {
           <div
             key={school.urn}
             className={`school-card ${selectedSchool && selectedSchool.urn === school.urn ? 'selected' : ''}`}
-            onClick={() => onSchoolClick(school)}
+            onClick={() => onSchoolClick(school, index + 1)}
           >
             <div className="school-rank">#{index + 1}</div>
 
@@ -114,40 +124,82 @@ const SchoolList = ({ schools, onSchoolClick, selectedSchool }) => {
                   </div>
                 )}
 
-                {school.metrics.ptrwm_exp && (
-                  <div className="metric">
-                    <span className="metric-label">
-                      <Tooltip text={TOOLTIPS.ptrwm_exp}>Expected RWM:</Tooltip>
-                    </span>
-                    <span className="metric-value">{school.metrics.ptrwm_exp.toFixed(1)}%</span>
-                  </div>
-                )}
+                {phase === 'secondary' ? (
+                  <>
+                    {school.metrics.l2basics_94 != null && (
+                      <div className="metric">
+                        <span className="metric-label">
+                          <Tooltip text={TOOLTIPS.l2basics_94}>Grade 5+ Eng &amp; Maths:</Tooltip>
+                        </span>
+                        <span className="metric-value">{school.metrics.l2basics_94.toFixed(1)}%</span>
+                      </div>
+                    )}
 
-                {school.metrics.ptrwm_high && (
-                  <div className="metric">
-                    <span className="metric-label">
-                      <Tooltip text={TOOLTIPS.ptrwm_high}>High RWM:</Tooltip>
-                    </span>
-                    <span className="metric-value">{school.metrics.ptrwm_high.toFixed(1)}%</span>
-                  </div>
-                )}
+                    {school.metrics.att8_score != null && (
+                      <div className="metric">
+                        <span className="metric-label">
+                          <Tooltip text={TOOLTIPS.att8_score}>Attainment 8:</Tooltip>
+                        </span>
+                        <span className="metric-value">{school.metrics.att8_score.toFixed(1)}</span>
+                      </div>
+                    )}
 
-                {school.metrics.read_average && (
-                  <div className="metric">
-                    <span className="metric-label">
-                      <Tooltip text={TOOLTIPS.read_average}>Reading:</Tooltip>
-                    </span>
-                    <span className="metric-value">{school.metrics.read_average.toFixed(1)}</span>
-                  </div>
-                )}
+                    {school.metrics.ebacc_94 != null && (
+                      <div className="metric">
+                        <span className="metric-label">
+                          <Tooltip text={TOOLTIPS.ebacc_94}>EBacc (4+):</Tooltip>
+                        </span>
+                        <span className="metric-value">{school.metrics.ebacc_94.toFixed(1)}%</span>
+                      </div>
+                    )}
 
-                {school.metrics.mat_average && (
-                  <div className="metric">
-                    <span className="metric-label">
-                      <Tooltip text={TOOLTIPS.mat_average}>Maths:</Tooltip>
-                    </span>
-                    <span className="metric-value">{school.metrics.mat_average.toFixed(1)}</span>
-                  </div>
+                    {school.metrics.ebacc_entry != null && (
+                      <div className="metric">
+                        <span className="metric-label">
+                          <Tooltip text={TOOLTIPS.ebacc_entry}>EBacc entry:</Tooltip>
+                        </span>
+                        <span className="metric-value">{school.metrics.ebacc_entry.toFixed(1)}%</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {school.metrics.ptrwm_exp && (
+                      <div className="metric">
+                        <span className="metric-label">
+                          <Tooltip text={TOOLTIPS.ptrwm_exp}>Expected RWM:</Tooltip>
+                        </span>
+                        <span className="metric-value">{school.metrics.ptrwm_exp.toFixed(1)}%</span>
+                      </div>
+                    )}
+
+                    {school.metrics.ptrwm_high && (
+                      <div className="metric">
+                        <span className="metric-label">
+                          <Tooltip text={TOOLTIPS.ptrwm_high}>High RWM:</Tooltip>
+                        </span>
+                        <span className="metric-value">{school.metrics.ptrwm_high.toFixed(1)}%</span>
+                      </div>
+                    )}
+
+                    {school.metrics.read_average && (
+                      <div className="metric">
+                        <span className="metric-label">
+                          <Tooltip text={TOOLTIPS.read_average}>Reading:</Tooltip>
+                        </span>
+                        <span className="metric-value">{school.metrics.read_average.toFixed(1)}</span>
+                      </div>
+                    )}
+
+                    {school.metrics.mat_average && (
+                      <div className="metric">
+                        <span className="metric-label">
+                          <Tooltip text={TOOLTIPS.mat_average}>Maths:</Tooltip>
+                        </span>
+                        <span className="metric-value">{school.metrics.mat_average.toFixed(1)}</span>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {school.fsm_pct != null && (
@@ -172,7 +224,7 @@ const SchoolList = ({ schools, onSchoolClick, selectedSchool }) => {
                   </div>
                 )}
 
-                {school.feeder_secondary && (
+                {phase === 'primary' && school.feeder_secondary && (
                   <div className="metric">
                     <span className="metric-label">
                       <Tooltip text={TOOLTIPS.feeder}>Nearest Secondary:</Tooltip>
