@@ -19,7 +19,7 @@
 .tooltip-box {
   position: fixed;
   z-index: 9999;
-  max-width: 260px;
+  max-width: 300px;
   background: #1f2937;
   color: #f9fafb;
   font-size: 12px;

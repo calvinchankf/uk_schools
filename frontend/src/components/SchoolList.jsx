@@ -6,6 +6,16 @@ import React from 'react';
 import Tooltip from './Tooltip';
 import './SchoolList.css';
 
+const SCHOOL_TYPES_TOOLTIP =
+`In England, a school's name doesn't tell you whether it charges fees.
+
+Free to attend (state-funded):
+• Academy / Free school — funded by government, run independently from the local council
+• Community school — traditional council-run state school
+• Voluntary aided / controlled — often faith schools, still state-funded
+
+Fee-paying schools appear as "Independent school" in the type tag below the school name.`;
+
 const TOOLTIPS = {
   distance:
     'Straight-line distance from your search point to the school, calculated from postcodes.',
@@ -68,24 +78,23 @@ const SchoolList = ({ schools, onSchoolClick, selectedSchool, phase = 'primary' 
   return (
     <div className="school-list">
       <div className="school-list-header">
-        <h2>Top Schools ({schools.length})</h2>
+        <h2>
+          Top Schools ({schools.length})
+          <Tooltip text={SCHOOL_TYPES_TOOLTIP} />
+          {' '}<span className="score-type-label">by {phase === 'primary' ? 'KS2' : 'KS4'} score</span>
+        </h2>
         <div className="legend">
-          <div className="legend-item">
-            <span className="legend-color" style={{ backgroundColor: '#22c55e' }}></span>
-            <span>Excellent (75+)</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-color" style={{ backgroundColor: '#84cc16' }}></span>
-            <span>Good (60-74)</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-color" style={{ backgroundColor: '#eab308' }}></span>
-            <span>Average (45-59)</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-color" style={{ backgroundColor: '#ef4444' }}></span>
-            <span>Below Avg (&lt;45)</span>
-          </div>
+          {[
+            { color: '#22c55e', label: '75+' },
+            { color: '#84cc16', label: '60–74' },
+            { color: '#eab308', label: '45–59' },
+            { color: '#ef4444', label: '<45' },
+          ].map(({ color, label }) => (
+            <div className="legend-item" key={label}>
+              <span className="legend-color" style={{ backgroundColor: color }}></span>
+              <span>{label}</span>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -96,10 +105,17 @@ const SchoolList = ({ schools, onSchoolClick, selectedSchool, phase = 'primary' 
             className={`school-card ${selectedSchool && selectedSchool.urn === school.urn ? 'selected' : ''}`}
             onClick={() => onSchoolClick(school, index + 1)}
           >
-            <div className="school-rank">#{index + 1}</div>
-
             <div className="school-info">
-              <h3 className="school-name">{school.name}</h3>
+              <div className="school-name-row">
+                <span className="school-rank">#{index + 1}</span>
+                <h3 className="school-name">{school.name}</h3>
+                <span
+                  className="score-badge"
+                  style={{ backgroundColor: getScoreBadgeColor(school.performance_score) }}
+                >
+                  {school.performance_score.toFixed(1)}
+                </span>
+              </div>
 
               <div className="school-meta">
                 <span className="school-type">{school.school_type}</span>
@@ -234,16 +250,6 @@ const SchoolList = ({ schools, onSchoolClick, selectedSchool, phase = 'primary' 
                     </span>
                   </div>
                 )}
-              </div>
-            </div>
-
-            <div className="school-score">
-              <div
-                className="score-badge"
-                style={{ backgroundColor: getScoreBadgeColor(school.performance_score) }}
-              >
-                <div className="score-value">{school.performance_score.toFixed(1)}</div>
-                <div className="score-label">{getScoreLabel(school.performance_score)}</div>
               </div>
             </div>
           </div>

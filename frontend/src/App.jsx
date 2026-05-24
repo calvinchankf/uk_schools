@@ -186,14 +186,14 @@ function App() {
               onClick={() => handlePhaseChange('primary')}
               disabled={isLoading}
             >
-              Primary (KS2)
+              Primary
             </button>
             <button
               className={`phase-btn${phase === 'secondary' ? ' phase-btn--active' : ''}`}
               onClick={() => handlePhaseChange('secondary')}
               disabled={isLoading}
             >
-              Secondary (KS4)
+              Secondary
             </button>
           </div>
         </div>

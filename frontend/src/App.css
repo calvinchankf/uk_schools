@@ -184,15 +184,30 @@
     padding: 0.6rem 0.75rem;
   }
 
-  /* Wrap radius onto its own line on narrow screens */
+  /* Keep all search controls on a single line */
   .mobile-search .search-bar form {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.4rem;
   }
 
+  /* Hide "Radius" text label to save horizontal space */
+  .mobile-search .radius-inline__label {
+    display: none;
+  }
+
   .mobile-search .radius-inline {
-    flex: 0 0 auto;
-    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  /* Allow input to shrink below its default min-width */
+  .mobile-search .search-input {
+    min-width: 0;
+  }
+
+  /* Tighter button padding on mobile */
+  .mobile-search .search-button {
+    padding: 0.6rem 0.75rem;
+    flex-shrink: 0;
   }
 
   /* Hide desktop overlay search bar and resize handle */
@@ -208,13 +223,18 @@
     display: none;
   }
 
-  /* Compact header — hide subtitle, keep title + phase toggle on one line */
+  /* Compact single-line header */
   .subtitle {
     display: none;
   }
 
   .app-header {
     padding: 0.4rem 0.75rem;
+  }
+
+  .app-header h1 {
+    font-size: 1.05rem;
+    white-space: nowrap;
   }
 
   /* Stack: map first, list second */

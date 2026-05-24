@@ -34,9 +34,16 @@
   color: #111827;
 }
 
+.score-type-label {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #6b7280;
+  margin-left: 0.25rem;
+}
+
 .legend {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.75rem;
   font-size: 0.75rem;
 }
@@ -62,9 +69,7 @@
 }
 
 .school-card {
-  display: flex;
-  gap: 1rem;
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   margin-bottom: 0.5rem;
   border: 2px solid #e5e7eb;
   border-radius: 8px;
@@ -85,14 +90,18 @@
   box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
 }
 
-.school-rank {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #6b7280;
-  min-width: 3rem;
+.school-name-row {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.school-rank {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #9ca3af;
+  flex-shrink: 0;
 }
 
 .school-info {
@@ -101,7 +110,8 @@
 }
 
 .school-name {
-  margin: 0 0 0.5rem 0;
+  flex: 1;
+  margin: 0;
   font-size: 1rem;
   color: #111827;
   word-wrap: break-word;
@@ -131,9 +141,9 @@
 }
 
 .school-metrics {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
   font-size: 0.75rem;
 }
 
@@ -154,32 +164,14 @@
   color: #111827;
 }
 
-.school-score {
-  display: flex;
-  align-items: center;
-}
-
 .score-badge {
-  padding: 0.75rem;
-  border-radius: 8px;
-  text-align: center;
+  flex-shrink: 0;
+  padding: 0.15rem 0.45rem;
+  border-radius: 5px;
   color: white;
-  min-width: 5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.score-value {
-  font-size: 1.5rem;
-  font-weight: bold;
-  line-height: 1;
-}
-
-.score-label {
-  font-size: 0.625rem;
-  margin-top: 0.25rem;
-  opacity: 0.9;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 /* Scrollbar styling */
