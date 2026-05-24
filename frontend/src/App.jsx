@@ -7,7 +7,7 @@ import Map from './components/Map';
 import SchoolList from './components/SchoolList';
 import SearchBar from './components/SearchBar';
 import FilterPanel from './components/FilterPanel';
-import { searchNearbySchools, searchByPostcode } from './services/api';
+import { searchNearbySchools, searchByPostcode, searchByPlaceName } from './services/api';
 import './App.css';
 
 function App() {
@@ -66,26 +66,27 @@ function App() {
     }
   }, [radiusKm, phase]);
 
-  const handlePostcodeSearch = useCallback(async (postcode) => {
+  const POSTCODE_RE = /^[A-Z]{1,2}\d/i;
+
+  const handleSearch = useCallback(async (query) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await searchByPostcode(postcode, radiusKm, 50, phase);
+      const isPostcode = POSTCODE_RE.test(query.trim());
+      const response = isPostcode
+        ? await searchByPostcode(query, radiusKm, 50, phase)
+        : await searchByPlaceName(query, radiusKm, 50, phase);
       setSchools(response.schools);
       setSearchLocation(response.search_location);
       setSelectedSchool(null);
       const count = response.schools.length;
-      track('postcode_search', { success: true, result_count: count, radius_km: radiusKm, phase });
-      if (count === 0) track('zero_results', { search_type: 'postcode', radius_km: radiusKm, phase });
+      const search_type = isPostcode ? 'postcode' : 'place_name';
+      track('search', { success: true, result_count: count, radius_km: radiusKm, phase, search_type });
+      if (count === 0) track('zero_results', { search_type, radius_km: radiusKm, phase });
     } catch (err) {
-      const notFound = err.response && err.response.status === 404;
-      if (notFound) {
-        setError('Postcode not found. Please check and try again.');
-      } else {
-        setError('Failed to search schools. Please try again.');
-      }
-      track('postcode_search', { success: false, not_found: notFound, radius_km: radiusKm, phase });
+      setError(err.message || 'Search failed. Please try again.');
+      track('search', { success: false, radius_km: radiusKm, phase });
       console.error('Search error:', err);
     } finally {
       setIsLoading(false);
@@ -104,6 +105,8 @@ function App() {
         let response;
         if (searchLocation.postcode) {
           response = await searchByPostcode(searchLocation.postcode, newRadius, 50, phase);
+        } else if (searchLocation.place_name) {
+          response = await searchByPlaceName(searchLocation.place_name, newRadius, 50, phase);
         } else {
           response = await searchNearbySchools(
             searchLocation.latitude,
@@ -138,6 +141,8 @@ function App() {
         let response;
         if (searchLocation.postcode) {
           response = await searchByPostcode(searchLocation.postcode, radiusKm, 50, newPhase);
+        } else if (searchLocation.place_name) {
+          response = await searchByPlaceName(searchLocation.place_name, radiusKm, 50, newPhase);
         } else {
           response = await searchNearbySchools(
             searchLocation.latitude,
@@ -194,16 +199,28 @@ function App() {
         </div>
       </header>
 
+      <div className="mobile-search">
+        <SearchBar
+          onSearch={handleSearch}
+          isLoading={isLoading}
+          radiusKm={radiusKm}
+          onRadiusChange={handleRadiusChange}
+          maxRadiusKm={10}
+        />
+        {error && <div className="error-message">{error}</div>}
+        {isLoading && <div className="loading-message">Searching for schools...</div>}
+      </div>
+
       <div className="app-content">
         <aside className="sidebar" style={{ width: sidebarWidth }}>
           {error && (
-            <div className="error-message">
+            <div className="error-message desktop-only">
               {error}
             </div>
           )}
 
           {isLoading && (
-            <div className="loading-message">
+            <div className="loading-message desktop-only">
               Searching for schools...
             </div>
           )}
@@ -223,7 +240,7 @@ function App() {
         <main className="map-container">
           <div className="map-overlay map-overlay--top-right">
             <SearchBar
-              onSearch={handlePostcodeSearch}
+              onSearch={handleSearch}
               isLoading={isLoading}
               variant="overlay"
               radiusKm={radiusKm}

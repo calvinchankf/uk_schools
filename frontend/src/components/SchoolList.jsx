@@ -59,7 +59,7 @@ const SchoolList = ({ schools, onSchoolClick, selectedSchool, phase = 'primary' 
       <div className="school-list empty">
         <div className="empty-message">
           <h3>No schools found</h3>
-          <p>Click on the map or enter a postcode to search for schools</p>
+          <p>Enter a postcode or place name, or click the map to search</p>
         </div>
       </div>
     );

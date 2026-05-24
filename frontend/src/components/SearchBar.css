@@ -2,6 +2,7 @@
   padding: 1rem;
   background: white;
   border-bottom: 2px solid #e5e7eb;
+  position: relative;
 }
 
 .search-bar--overlay {
@@ -99,4 +100,36 @@
 .search-button:disabled {
   background: #9ca3af;
   cursor: not-allowed;
+}
+
+.search-suggestions {
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  position: absolute;
+  z-index: 100;
+  width: calc(100% - 1rem);
+}
+
+.search-bar--overlay .search-suggestions {
+  width: 100%;
+}
+
+.search-suggestion {
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #111827;
+  transition: background-color 0.1s;
+}
+
+.search-suggestion:hover,
+.search-suggestion--active {
+  background: #eff6ff;
+  color: #1d4ed8;
 }

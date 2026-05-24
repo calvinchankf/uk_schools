@@ -6,6 +6,7 @@
 
 // ── Data cache ────────────────────────────────────────────────────────────────
 const schoolsCache = { primary: null, secondary: null };
+let placesCache = null;
 
 async function loadSchools(phase = 'primary') {
   if (schoolsCache[phase]) return schoolsCache[phase];
@@ -45,6 +46,14 @@ function findNearby(schools, lat, lon, radiusKm, limit) {
     schools: nearby,
     count: nearby.length,
   };
+}
+
+async function loadPlaces() {
+  if (placesCache) return placesCache;
+  const response = await fetch(`${import.meta.env.BASE_URL}data/places.json`);
+  if (!response.ok) throw new Error('Failed to load places data');
+  placesCache = await response.json();
+  return placesCache;
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -89,6 +98,30 @@ export const getSchoolDetails = async (urn, phase = 'primary') => {
   const school = schools.find((s) => s.urn === urn);
   if (!school) throw new Error(`School with URN ${urn} not found`);
   return school;
+};
+
+/**
+ * Return up to 8 place suggestions whose name starts with query (case-insensitive).
+ */
+export const getPlaceSuggestions = async (query) => {
+  if (!query || query.length < 2) return [];
+  const places = await loadPlaces();
+  const q = query.toLowerCase();
+  return places.filter((p) => p.name.toLowerCase().startsWith(q)).slice(0, 8);
+};
+
+/**
+ * Search for schools near a named place (town or borough).
+ */
+export const searchByPlaceName = async (name, radiusKm = 2, limit = 50, phase = 'primary') => {
+  const places = await loadPlaces();
+  const match = places.find((p) => p.name.toLowerCase() === name.toLowerCase());
+  if (!match) throw new Error(`Place "${name}" not found`);
+  const schools = await loadSchools(phase);
+  return {
+    ...findNearby(schools, match.lat, match.lon, radiusKm, limit),
+    search_location: { place_name: match.name, latitude: match.lat, longitude: match.lon, radius_km: radiusKm },
+  };
 };
 
 /**
