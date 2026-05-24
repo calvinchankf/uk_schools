@@ -132,6 +132,7 @@
 .map-overlay--top-right {
   top: 12px;
   right: 12px;
+  width: min(680px, calc(100% - 80px));
 }
 
 .map-overlay > * {
@@ -159,34 +160,82 @@
   text-align: center;
 }
 
+/* Mobile search bar — hidden on desktop, full-width bar on mobile */
+.mobile-search {
+  display: none;
+}
+
+/* Desktop-only elements hidden on mobile */
+.desktop-only {
+  /* shown by default */
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
+  .mobile-search {
+    display: block;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+  }
+
+  .mobile-search .search-bar {
+    border-bottom: none;
+    padding: 0.6rem 0.75rem;
+  }
+
+  /* Wrap radius onto its own line on narrow screens */
+  .mobile-search .search-bar form {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .mobile-search .radius-inline {
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+
+  /* Hide desktop overlay search bar and resize handle */
+  .map-overlay--top-right {
+    display: none;
+  }
+
+  .resize-handle {
+    display: none;
+  }
+
+  .desktop-only {
+    display: none;
+  }
+
+  /* Compact header — hide subtitle, keep title + phase toggle on one line */
+  .subtitle {
+    display: none;
+  }
+
+  .app-header {
+    padding: 0.4rem 0.75rem;
+  }
+
+  /* Stack: map first, list second */
   .app-content {
     flex-direction: column;
   }
 
-  .sidebar {
-    width: 100%;
-    height: 40vh;
-    border-right: none;
-    border-bottom: 2px solid #e5e7eb;
-  }
-
   .map-container {
-    height: 60vh;
+    order: 1;
+    height: 45vh;
+    min-height: 260px;
+    flex: none;
   }
 
-  .app-header h1 {
-    font-size: 1.25rem;
-  }
-
-  .subtitle {
-    font-size: 0.75rem;
-  }
-
-  .map-overlay--top-right {
-    top: 8px;
-    left: 8px;
-    right: 8px;
+  .sidebar {
+    order: 2;
+    width: 100% !important;
+    flex: 1;
+    height: auto;
+    overflow-y: auto;
+    border-right: none;
+    border-top: 2px solid #e5e7eb;
   }
 }

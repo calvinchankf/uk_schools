@@ -1,9 +1,8 @@
-/**
- * Postcode search bar component
- */
-
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { getPlaceSuggestions } from '../services/api';
 import './SearchBar.css';
+
+const POSTCODE_RE = /^[A-Z]{1,2}\d/i;
 
 const SearchBar = ({
   onSearch,
@@ -13,37 +12,99 @@ const SearchBar = ({
   onRadiusChange,
   maxRadiusKm = 10,
 }) => {
-  const [postcode, setPostcode] = useState('');
+  const [query, setQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const containerRef = useRef(null);
+
   const rootClassName = useMemo(() => {
     const classes = ['search-bar'];
     if (variant === 'overlay') classes.push('search-bar--overlay');
     return classes.join(' ');
   }, [variant]);
 
-  const showRadiusInline = variant === 'overlay' && typeof radiusKm === 'number' && typeof onRadiusChange === 'function';
+  const showRadiusInline = typeof radiusKm === 'number' && typeof onRadiusChange === 'function';
+
+  // Fetch suggestions whenever query changes (skip for postcodes)
+  useEffect(() => {
+    if (POSTCODE_RE.test(query.trim()) || query.trim().length < 2) {
+      setSuggestions([]);
+      setActiveIndex(-1);
+      return;
+    }
+    let cancelled = false;
+    getPlaceSuggestions(query.trim()).then((results) => {
+      if (!cancelled) {
+        setSuggestions(results);
+        setActiveIndex(-1);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [query]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const onPointerDown = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setSuggestions([]);
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, []);
+
+  const commitSearch = useCallback((value) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    setSuggestions([]);
+    setActiveIndex(-1);
+    onSearch(trimmed);
+  }, [onSearch]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (postcode.trim()) {
-      onSearch(postcode.trim().toUpperCase());
+    const chosen = activeIndex >= 0 && suggestions[activeIndex]
+      ? suggestions[activeIndex].name
+      : query;
+    commitSearch(chosen);
+  };
+
+  const handleKeyDown = (e) => {
+    if (!suggestions.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex((i) => Math.max(i - 1, -1));
+    } else if (e.key === 'Escape') {
+      setSuggestions([]);
+      setActiveIndex(-1);
     }
   };
 
+  const handleSuggestionClick = (name) => {
+    setQuery(name);
+    commitSearch(name);
+  };
+
   return (
-    <div className={rootClassName}>
+    <div className={rootClassName} ref={containerRef}>
       <form onSubmit={handleSubmit}>
         <input
           type="text"
           className="search-input"
-          placeholder="Enter UK postcode (e.g., EC1N 2NX)"
-          value={postcode}
-          onChange={(e) => setPostcode(e.target.value)}
+          placeholder="Postcode or place name (e.g. SW1A 2AA, Wimbledon)"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
           disabled={isLoading}
+          autoComplete="off"
         />
         <button
           type="submit"
           className="search-button"
-          disabled={isLoading || !postcode.trim()}
+          disabled={isLoading || !query.trim()}
         >
           {isLoading ? 'Searching...' : 'Search'}
         </button>
@@ -65,6 +126,25 @@ const SearchBar = ({
           </div>
         )}
       </form>
+
+      {suggestions.length > 0 && (
+        <ul className="search-suggestions" role="listbox">
+          {suggestions.map((place, i) => (
+            <li
+              key={place.name}
+              className={`search-suggestion${i === activeIndex ? ' search-suggestion--active' : ''}`}
+              role="option"
+              aria-selected={i === activeIndex}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                handleSuggestionClick(place.name);
+              }}
+            >
+              {place.name}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };
