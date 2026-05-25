@@ -2,7 +2,7 @@
  * Ranked list of schools component
  */
 
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import Tooltip from './Tooltip';
 import './SchoolList.css';
 
@@ -43,25 +43,76 @@ const TOOLTIPS = {
     '% of pupils entered for the full English Baccalaureate (EBacc) combination of subjects. The government\'s target is 90% entry by 2025.',
 };
 
-const SchoolList = ({ schools, onSchoolClick, selectedSchool, phase = 'primary' }) => {
+/**
+ * Click-toggled tooltip showing the full ethnicity breakdown.
+ */
+const EthnicityMoreTooltip = ({ allGroups }) => {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.top + window.scrollY, left: rect.left + window.scrollX });
+    }
+    setOpen(prev => !prev);
+  };
+
+  return (
+    <span className="ethnicity-more-wrapper" ref={wrapperRef}>
+      <span
+        ref={btnRef}
+        className="ethnicity-more-btn"
+        onClick={handleClick}
+      >
+        more
+      </span>
+      {open && (
+        <span
+          className="ethnicity-more-popup"
+          style={{ top: pos.top - 8, left: pos.left + 24 }}
+        >
+          <strong>Full ethnicity breakdown</strong>
+          {allGroups.map((e, i) => (
+            <div key={i}>{e.group}: {e.pct}%</div>
+          ))}
+        </span>
+      )}
+    </span>
+  );
+};
+
+const SchoolList = ({ schools, onSchoolClick, selectedSchool, phase = 'primary', scrollToUrn }) => {
+  const cardRefs = useRef({});
+  const listContentRef = useRef(null);
+
+  useEffect(() => {
+    if (!scrollToUrn) return;
+    const card = cardRefs.current[scrollToUrn.urn];
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [scrollToUrn]);
+
   const getScoreBadgeColor = (score) => {
     if (score >= 75) return '#22c55e';
     if (score >= 60) return '#84cc16';
     if (score >= 45) return '#eab308';
     return '#ef4444';
-  };
-
-  const getScoreLabel = (score) => {
-    if (score >= 75) return 'Excellent';
-    if (score >= 60) return 'Good';
-    if (score >= 45) return 'Average';
-    return 'Below Average';
-  };
-
-  const buildEthnicityTooltip = (groups) => {
-    if (!groups || groups.length === 0) return 'No ethnicity data available.';
-    const lines = groups.map(e => `${e.group}: ${e.pct}%`).join('\n');
-    return `Full ethnicity breakdown:\n${lines}`;
   };
 
   if (schools.length === 0) {
@@ -98,10 +149,14 @@ const SchoolList = ({ schools, onSchoolClick, selectedSchool, phase = 'primary' 
         </div>
       </div>
 
-      <div className="school-list-content">
+      <div className="school-list-content" ref={listContentRef}>
         {schools.map((school, index) => (
           <div
             key={school.urn}
+            ref={el => {
+              if (el) cardRefs.current[school.urn] = el;
+              else delete cardRefs.current[school.urn];
+            }}
             className={`school-card ${selectedSchool && selectedSchool.urn === school.urn ? 'selected' : ''}`}
             onClick={() => onSchoolClick(school, index + 1)}
           >
@@ -229,13 +284,12 @@ const SchoolList = ({ schools, onSchoolClick, selectedSchool, phase = 'primary' 
 
                 {school.ethnicity && school.ethnicity.length > 0 && (
                   <div className="metric metric-ethnicity">
-                    <span className="metric-label">
-                      <Tooltip text={buildEthnicityTooltip(school.ethnicity)}>
-                        Ethnicity (top 3):
-                      </Tooltip>
-                    </span>
+                    <span className="metric-label">Ethnicity (top 3):</span>
                     <span className="metric-value">
                       {school.ethnicity.slice(0, 3).map(e => `${e.group} ${e.pct}%`).join(' · ')}
+                      {school.ethnicity.length > 3 && (
+                        <EthnicityMoreTooltip allGroups={school.ethnicity} />
+                      )}
                     </span>
                   </div>
                 )}

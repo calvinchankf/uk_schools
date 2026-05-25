@@ -19,6 +19,8 @@ function App() {
   const [error, setError] = useState(null);
   const [sidebarWidth, setSidebarWidth] = useState(400);
   const [phase, setPhase] = useState('primary');
+  const [scrollToUrn, setScrollToUrn] = useState(null);
+  const [panToSchool, setPanToSchool] = useState(null);
   const isDragging = useRef(false);
 
   const handleResizeStart = useCallback((e) => {
@@ -163,8 +165,17 @@ function App() {
     }
   }, [searchLocation, radiusKm, phase]);
 
-  const handleSchoolClick = useCallback((school, rank) => {
+  // Called when user clicks a marker on the map — scroll the list to that card
+  const handleMapMarkerClick = useCallback((school) => {
     setSelectedSchool(school);
+    setScrollToUrn({ urn: school.urn, ts: Date.now() });
+    track('map_marker_clicked', { school_name: school.name, urn: school.urn });
+  }, []);
+
+  // Called when user clicks a card in the list — fly the map to that school
+  const handleListSchoolClick = useCallback((school, rank) => {
+    setSelectedSchool(school);
+    setPanToSchool({ lat: school.latitude, lng: school.longitude, ts: Date.now() });
     track('school_card_clicked', { school_name: school.name, urn: school.urn, rank });
   }, []);
 
@@ -227,9 +238,10 @@ function App() {
 
           <SchoolList
             schools={schools}
-            onSchoolClick={handleSchoolClick}
+            onSchoolClick={handleListSchoolClick}
             selectedSchool={selectedSchool}
             phase={phase}
+            scrollToUrn={scrollToUrn}
           />
         </aside>
 
@@ -251,10 +263,11 @@ function App() {
           <Map
             schools={schools}
             onMapClick={handleMapClick}
-            onSchoolClick={handleSchoolClick}
+            onSchoolClick={handleMapMarkerClick}
             searchLocation={searchLocation}
             radiusKm={radiusKm}
             selectedSchool={selectedSchool}
+            panToSchool={panToSchool}
           />
         </main>
       </div>
