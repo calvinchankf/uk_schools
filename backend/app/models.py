@@ -6,11 +6,17 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 
 class SchoolMetrics(BaseModel):
+    # KS2 (primary) -- null for secondary schools
     ptrwm_exp: Optional[float] = Field(None, description="% at expected standard in reading/writing/maths")
     ptrwm_high: Optional[float] = Field(None, description="% at high standard")
     read_average: Optional[float] = Field(None, description="Average reading scaled score")
     mat_average: Optional[float] = Field(None, description="Average maths scaled score")
     gps_average: Optional[float] = Field(None, description="Average GPS scaled score")
+    # KS4 (secondary) -- null for primary schools
+    att8_score: Optional[float] = Field(None, description="Attainment 8 score")
+    l2basics_94: Optional[float] = Field(None, description="% achieving grade 9-4 in English & maths")
+    ebacc_94: Optional[float] = Field(None, description="% achieving EBacc at grade 9-4")
+    ebacc_entry: Optional[float] = Field(None, description="% entered for EBacc")
 
 class EthnicityGroup(BaseModel):
     group: str
@@ -35,6 +41,7 @@ class School(BaseModel):
     school_type: str
     age_low: Optional[int]
     age_high: Optional[int]
+    phase: str = "primary"
     performance_score: float
     metrics: SchoolMetrics
     address: SchoolAddress
