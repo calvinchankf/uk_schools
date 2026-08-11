@@ -1,0 +1,51 @@
+name: Data pipeline
+
+on:
+  workflow_dispatch: {}
+  # No recurring schedule: DfE KS2/KS4 data is published annually (with
+  # revisions), not continuously -- trigger manually after new figures are
+  # published. Add a cron here later if that assumption changes.
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - run: npm --prefix frontend ci
+
+      - name: Run data pipeline
+        run: bash scripts/run_all.sh
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL_DIRECT }}
+
+      - name: Open PR with refreshed data
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: scheduled data refresh"
+          title: "Data refresh (automated)"
+          body: |
+            Automated run of `scripts/run_all.sh` via the `data-pipeline` workflow.
+
+            Also loaded the same data into Postgres (Supabase) if this PR was
+            triggered with `SUPABASE_DB_URL_DIRECT` configured -- check the
+            workflow run log to confirm Step 10 didn't skip.
+
+            Review the diff in `frontend/public/data/` and `docs/` before merging --
+            merging this is what makes the change live on the static site.
+          branch: data-refresh/automated
+          add-paths: |
+            frontend/public/data
+            docs

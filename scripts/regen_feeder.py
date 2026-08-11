@@ -1,7 +1,16 @@
-import csv, math
+"""
+Regenerate england_feeder_schools.csv: for each secondary school, find
+nearby primary schools within FEEDER_RADIUS_KM (candidate feeder schools).
 
-COORDS_FILE  = "/Users/kinfungchan/Desktop/kid/uk_schools/data_2024-2025/england_school_coords.csv"
-FEEDER_FILE  = "/Users/kinfungchan/Desktop/kid/uk_schools/data_2024-2025/england_feeder_schools.csv"
+Must run before enrich_schools.py, which consumes this file's output.
+"""
+
+import csv, math
+from pathlib import Path
+
+ROOT = Path(__file__).parent.parent
+COORDS_FILE = ROOT / "data_2024-2025" / "england_school_coords.csv"
+FEEDER_FILE = ROOT / "data_2024-2025" / "england_feeder_schools.csv"
 
 FEEDER_RADIUS_KM = 3.0
 MAX_FEEDERS = 10
