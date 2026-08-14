@@ -29,7 +29,13 @@ jobs:
       - name: Run data pipeline
         run: bash scripts/run_all.sh
         env:
-          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL_DIRECT }}
+          # Must be the pooler connection string (port 6543), not the direct
+          # one (port 5432). Supabase's direct connection is IPv6-only unless
+          # you pay for the IPv4 add-on, and GitHub-hosted runners have no
+          # IPv6 egress -- confirmed by an actual failed run (OperationalError,
+          # "Network is unreachable" against an IPv6 address). The pooler is
+          # dual-stack and works fine from here.
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL_POOLER }}
 
       - name: Open PR with refreshed data
         uses: peter-evans/create-pull-request@v6
@@ -40,7 +46,7 @@ jobs:
             Automated run of `scripts/run_all.sh` via the `data-pipeline` workflow.
 
             Also loaded the same data into Postgres (Supabase) if this PR was
-            triggered with `SUPABASE_DB_URL_DIRECT` configured -- check the
+            triggered with `SUPABASE_DB_URL_POOLER` configured -- check the
             workflow run log to confirm Step 10 didn't skip.
 
             Review the diff in `frontend/public/data/` and `docs/` before merging --
