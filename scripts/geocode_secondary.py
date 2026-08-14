@@ -9,6 +9,8 @@ import json
 import time
 from pathlib import Path
 
+ROOT = Path(__file__).parent.parent
+
 
 def batch_geocode_postcodes(postcodes, batch_size=100):
     results = {}
@@ -50,13 +52,13 @@ def main():
     print("Geocoding Secondary School Postcodes")
     print("=" * 60)
 
-    coords_path = Path('../data_processed/postcode_coordinates.json')
+    coords_path = ROOT / 'data_processed' / 'postcode_coordinates.json'
     with open(coords_path) as f:
         existing = json.load(f)
     print(f"\nExisting cached postcodes: {len(existing)}")
 
     schools_df = pd.read_csv(
-        '../data_2024-2025/england_school_information.csv',
+        ROOT / 'data_2024-2025' / 'england_school_information.csv',
         encoding='utf-8-sig',
     )
     sec = schools_df[schools_df['ISSECONDARY'] == 1]

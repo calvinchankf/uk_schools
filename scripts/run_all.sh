@@ -1,63 +1,68 @@
 #!/bin/bash
+set -euo pipefail
 
 # UK Schools Data Processing Pipeline
-# This script runs all data processing steps in sequence
+#
+# Runs the full corrected pipeline in dependency order and ends by
+# regenerating docs/ (the built GitHub Pages output), so the static
+# VITE_DATA_MODE=static rollback path never goes stale even after this
+# script "succeeds". If DATABASE_URL is set, also loads the result into
+# Postgres (Supabase) -- otherwise that step is skipped, so local runs
+# without DB access still refresh the static data.
+#
+# Invocable from anywhere -- always operates relative to the repo root.
+
+cd "$(dirname "$0")/.."
+REPO_ROOT="$(pwd)"
 
 echo "=========================================="
 echo "UK Schools Data Processing Pipeline"
 echo "=========================================="
-echo ""
 
-# Check if virtual environment exists
-if [ ! -d "venv" ]; then
+if [ ! -d "scripts/venv" ]; then
     echo "Creating virtual environment..."
-    python3 -m venv venv
+    python3 -m venv scripts/venv
 fi
 
-# Activate virtual environment
 echo "Activating virtual environment..."
-source venv/bin/activate
+source scripts/venv/bin/activate
 
-# Install dependencies
 echo "Installing dependencies..."
-pip install -q -r requirements.txt
+pip install -q -r scripts/requirements.txt
 
-echo ""
-echo "=========================================="
-echo "Step 1: Geocoding Postcodes"
-echo "=========================================="
-echo "This will take approximately 4 minutes..."
-echo ""
-python3 geocode_schools.py
+run_step () {
+    echo ""
+    echo "=========================================="
+    echo "$1"
+    echo "=========================================="
+    shift
+    python3 "$@"
+}
 
-if [ $? -ne 0 ]; then
-    echo "Error: Geocoding failed!"
-    exit 1
+run_step "Step 1: Geocoding primary school postcodes"    scripts/geocode_schools.py
+run_step "Step 2: Geocoding secondary school postcodes"  scripts/geocode_secondary.py
+run_step "Step 3: Regenerating feeder-school distances"  scripts/regen_feeder.py
+run_step "Step 4: Preparing primary school data"         scripts/prepare_school_data.py
+run_step "Step 5: Preparing secondary school data"       scripts/prepare_secondary_data.py
+run_step "Step 6: Enriching primary schools (FSM/ethnicity/feeder)" scripts/enrich_schools.py
+run_step "Step 7: Validating data"                       scripts/validate_data.py
+run_step "Step 8: Syncing data into frontend/public/data" scripts/sync_frontend_data.py
+run_step "Step 9: Generating place-name autocomplete"    scripts/gen_places.py
+
+if [ -n "${DATABASE_URL:-}" ]; then
+    run_step "Step 10: Loading data into Postgres" scripts/load_to_postgres.py
+else
+    echo ""
+    echo "=========================================="
+    echo "Step 10: Loading data into Postgres -- SKIPPED (DATABASE_URL not set)"
+    echo "=========================================="
 fi
 
 echo ""
 echo "=========================================="
-echo "Step 2: Preparing School Data"
+echo "Step 11: Rebuilding docs/ (GitHub Pages output)"
 echo "=========================================="
-echo ""
-python3 prepare_school_data.py
-
-if [ $? -ne 0 ]; then
-    echo "Error: Data preparation failed!"
-    exit 1
-fi
-
-echo ""
-echo "=========================================="
-echo "Step 3: Validating Data"
-echo "=========================================="
-echo ""
-python3 validate_data.py
-
-if [ $? -ne 0 ]; then
-    echo "Error: Data validation failed!"
-    exit 1
-fi
+npm --prefix "$REPO_ROOT/frontend" run build
 
 echo ""
 echo "=========================================="
@@ -65,11 +70,10 @@ echo "Data Processing Complete!"
 echo "=========================================="
 echo ""
 echo "Output files:"
-echo "  - ../data_processed/postcode_coordinates.json"
-echo "  - ../data_processed/schools_with_performance.json"
-echo "  - ../data_processed/validation_report.txt"
-echo ""
-echo "Next steps:"
-echo "  1. Start the backend: cd ../backend && uvicorn app.main:app --reload"
-echo "  2. Start the frontend: cd ../frontend && npm install && npm run dev"
+echo "  - data_processed/postcode_coordinates.json"
+echo "  - data_processed/schools_with_performance.json"
+echo "  - data_processed/secondary_schools.json"
+echo "  - data_processed/validation_report.txt"
+echo "  - frontend/public/data/{schools,secondary,places}.json (synced)"
+echo "  - docs/ (rebuilt)"
 echo ""

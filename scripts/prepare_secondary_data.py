@@ -7,6 +7,8 @@ import pandas as pd
 import json
 from pathlib import Path
 
+ROOT = Path(__file__).parent.parent
+
 
 def safe_float(value):
     if pd.isna(value) or value in ('SUPP', 'NP', 'NE', 'NA', 'LOWCOV'):
@@ -65,14 +67,14 @@ def main():
 
     print("\n1. Loading school information...")
     schools_df = pd.read_csv(
-        '../data_2024-2025/england_school_information.csv',
+        ROOT / 'data_2024-2025' / 'england_school_information.csv',
         encoding='utf-8-sig',
     )
     print(f"   Total schools: {len(schools_df)}")
 
     print("\n2. Loading KS4 performance data...")
     ks4_df = pd.read_csv(
-        '../data_2024-2025/england_ks4provisional.csv',
+        ROOT / 'data_2024-2025' / 'england_ks4provisional.csv',
         encoding='utf-8-sig',
         low_memory=False,
     )
@@ -82,7 +84,7 @@ def main():
     print(f"   KS4 school-level records: {len(ks4_df)}")
 
     print("\n3. Loading postcode coordinates...")
-    with open('../data_processed/postcode_coordinates.json') as f:
+    with open(ROOT / 'data_processed' / 'postcode_coordinates.json') as f:
         coordinates = json.load(f)
     print(f"   Cached postcodes: {len(coordinates)}")
 
@@ -149,7 +151,7 @@ def main():
         }
         schools_list.append(school)
 
-    output_path = Path('../data_processed/secondary_schools.json')
+    output_path = ROOT / 'data_processed' / 'secondary_schools.json'
     with open(output_path, 'w') as f:
         json.dump(schools_list, f, indent=2)
     print(f"\n9. Saved to: {output_path}")

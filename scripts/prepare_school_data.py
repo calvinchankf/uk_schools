@@ -7,6 +7,8 @@ import pandas as pd
 import json
 from pathlib import Path
 
+ROOT = Path(__file__).parent.parent
+
 def safe_float(value):
     """Safely convert a value to float, handling % signs and other formats."""
     if pd.isna(value) or value == 'SUPP':
@@ -89,17 +91,17 @@ def main():
 
     # Load school information
     print("\n1. Loading school information...")
-    schools_df = pd.read_csv('../data_2024-2025/england_school_information.csv')
+    schools_df = pd.read_csv(ROOT / 'data_2024-2025' / 'england_school_information.csv')
     print(f"   Total schools: {len(schools_df)}")
 
     # Load KS2 performance data
     print("\n2. Loading KS2 performance data...")
-    ks2_df = pd.read_csv('../data_2024-2025/england_ks2revised.csv')
+    ks2_df = pd.read_csv(ROOT / 'data_2024-2025' / 'england_ks2revised.csv')
     print(f"   KS2 records: {len(ks2_df)}")
 
     # Load geocoded coordinates
     print("\n3. Loading postcode coordinates...")
-    with open('../data_processed/postcode_coordinates.json', 'r') as f:
+    with open(ROOT / 'data_processed' / 'postcode_coordinates.json', 'r') as f:
         coordinates = json.load(f)
     print(f"   Geocoded postcodes: {len(coordinates)}")
 
@@ -160,6 +162,7 @@ def main():
             'school_type': row['SCHOOLTYPE'] if pd.notna(row['SCHOOLTYPE']) else 'Unknown',
             'age_low': int(row['AGELOW']) if pd.notna(row['AGELOW']) else None,
             'age_high': int(row['AGEHIGH']) if pd.notna(row['AGEHIGH']) else None,
+            'phase': 'primary',
             'performance_score': float(row['performance_score']),
             'metrics': {
                 'ptrwm_exp': safe_float(row['PTRWM_EXP']),
@@ -177,7 +180,7 @@ def main():
         schools_list.append(school)
 
     # Save to JSON
-    output_path = Path('../data_processed/schools_with_performance.json')
+    output_path = ROOT / 'data_processed' / 'schools_with_performance.json'
     with open(output_path, 'w') as f:
         json.dump(schools_list, f, indent=2)
 

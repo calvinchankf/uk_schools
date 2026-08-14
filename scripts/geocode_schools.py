@@ -9,6 +9,8 @@ import json
 import time
 from pathlib import Path
 
+ROOT = Path(__file__).parent.parent
+
 def batch_geocode_postcodes(postcodes, batch_size=100):
     """
     Geocode postcodes using postcodes.io batch API.
@@ -109,7 +111,7 @@ def main():
 
     # Load school data
     print("\n1. Loading school data...")
-    schools_df = pd.read_csv('../data_2024-2025/england_school_information.csv')
+    schools_df = pd.read_csv(ROOT / 'data_2024-2025' / 'england_school_information.csv')
     print(f"   Total schools: {len(schools_df)}")
 
     # Filter for primary schools with postcodes
@@ -149,7 +151,7 @@ def main():
     print(f"   Failed: {len(postcodes) - final_successful}")
 
     # Save results
-    output_path = Path('../data_processed/postcode_coordinates.json')
+    output_path = ROOT / 'data_processed' / 'postcode_coordinates.json'
     output_path.parent.mkdir(exist_ok=True)
 
     with open(output_path, 'w') as f:
