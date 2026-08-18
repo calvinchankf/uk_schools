@@ -11,11 +11,21 @@ const SearchBar = ({
   radiusKm,
   onRadiusChange,
   maxRadiusKm = 10,
+  initialQuery = '',
 }) => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef(null);
+
+  // initialQuery arrives asynchronously (after a URL restore resolves),
+  // well after this component has already mounted with an empty query --
+  // a useState initializer would miss it, so this has to be an effect.
+  // Only ever fills an empty box, never clobbers what the user is typing.
+  useEffect(() => {
+    if (initialQuery && !query) setQuery(initialQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery]);
 
   const rootClassName = useMemo(() => {
     const classes = ['search-bar'];
