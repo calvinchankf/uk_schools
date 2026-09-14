@@ -4,7 +4,11 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import Tooltip from './Tooltip';
+import AdCard from './AdCard';
 import './SchoolList.css';
+
+// Show one ad slot after every N school cards.
+const AD_FREQUENCY = 3;
 
 const SCHOOL_TYPES_TOOLTIP =
 `In England, a school's name doesn't tell you whether it charges fees.
@@ -151,8 +155,8 @@ const SchoolList = ({ schools, onSchoolClick, selectedSchool, phase = 'primary',
 
       <div className="school-list-content" ref={listContentRef}>
         {schools.map((school, index) => (
+          <React.Fragment key={school.urn}>
           <div
-            key={school.urn}
             ref={el => {
               if (el) cardRefs.current[school.urn] = el;
               else delete cardRefs.current[school.urn];
@@ -307,6 +311,10 @@ const SchoolList = ({ schools, onSchoolClick, selectedSchool, phase = 'primary',
               </div>
             </div>
           </div>
+          {(index + 1) % AD_FREQUENCY === 0 && (
+            <AdCard slotId={Math.floor(index / AD_FREQUENCY) + 1} />
+          )}
+          </React.Fragment>
         ))}
       </div>
     </div>
